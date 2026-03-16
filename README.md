@@ -12,7 +12,7 @@ Educai, sadece bir soru çözme uygulaması değil; kullanıcının tercihlerine
 ## 🛠 Teknik Stack
 Bu proje, web ve mobil dünyasının en güçlü teknolojilerini merkezi bir .NET API üzerinden birleştirir:
 
-* **Backend:** ASP.NET Core 9.0 (C#), SignalR (Real-time Engine), PostgreSQL.
+* **Backend:** ASP.NET Core 10.0 (C#), SignalR (Real-time Engine), PostgreSQL.
 * **Web (Dashboard):** React & Tailwind CSS.
 * **Mobile (iOS):** Swift & SwiftUI (Combine Framework ile Fonksiyonel Programlama yaklaşımı).
 * **AI Integration:** OpenAI API (Akıllı Profil ve Soru Analizi).
