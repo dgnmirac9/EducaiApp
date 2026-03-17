@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Educai.API/Educai.API.csproj" />
+    <Project Path="src/Educai.Application/Educai.Application.csproj" />
+    <Project Path="src/Educai.Domain/Educai.Domain.csproj" />
+    <Project Path="src/Educai.Infrastructure/Educai.Infrastructure.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,21 @@
+# .NET Build Outputs
+[Bb]in/
+[Oo]bj/
+out/
+
+# IDE Settings
+.vs/
+.idea/
+*.user
+*.userosscache
+*.sln.docstates
+
+# OS Specific
+.DS_Store
+Thumbs.db
+
+# EF Core Tools
+*.log
+
+# Sensitive Info
+appsettings.Development.json
