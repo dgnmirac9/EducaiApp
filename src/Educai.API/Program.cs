@@ -1,3 +1,6 @@
+using Educai.API.Hubs;
+using Educai.Application.Interfaces;
+using Educai.Application.Services;
 using Educai.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -6,10 +9,35 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+builder.Services.AddSwaggerGen();
 
 // PostgreSQL bağlantı yapılandırması
 builder.Services.AddDbContext<EducaiDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddScoped<IQuestionService, QuestionService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IUserPreferenceService, UserPreferenceService>();
+builder.Services.AddScoped<IMatchmakingService, MatchmakingService>();
+builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
+builder.Services.AddScoped<IAINicknameService, MockAINicknameService>();
+builder.Services.AddScoped<IUserActivityService, UserActivityService>();
+builder.Services.AddScoped<IUserProgressService, UserProgressService>();
+builder.Services.AddScoped<IXPService, XPService>();
+builder.Services.AddControllers();
+
+// SignalR & CORS Yapılandırması
+builder.Services.AddSignalR();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("CorsPolicy", policyBuilder =>
+    {
+        policyBuilder.SetIsOriginAllowed(_ => true) // Frontend (React/Flutter/vb) local testleri için esneklik
+                     .AllowAnyMethod()
+                     .AllowAnyHeader()
+                     .AllowCredentials(); // SignalR, Credentials'ı zorunlu tutar
+    });
+});
 
 var app = builder.Build();
 
@@ -17,9 +45,15 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
+app.UseCors("CorsPolicy");
 app.UseHttpsRedirection();
+app.UseAuthorization();
+app.MapControllers();
+app.MapHub<ChallengeHub>("/challenge-hub");
 
 var summaries = new[]
 {

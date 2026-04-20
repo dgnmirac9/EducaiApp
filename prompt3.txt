@@ -1,0 +1,40 @@
+Görev 3: IUserProgressService — Haftalık Hedef Takibi
+
+Kullanıcının haftalık soru hedefine göre ilerleme yüzdesini 
+hesaplayan servis.
+
+Mevcut mimari:
+- Servisler sealed class
+- DTO'lar immutable record
+- Direkt EducaiDbContext kullanılıyor
+- Guid.CreateVersion7() ile ID üretiliyor
+- AsNoTracking() read sorgularında kullanılıyor
+- UserPreference'da DailyTarget ve WeeklyQuestionTarget var
+- UserActivity tablosu artık mevcut (az önce eklendi)
+
+Yapılacaklar:
+
+1. Application katmanında:
+   - UserProgressDto immutable record oluştur
+   - IUserProgressService interface'i tanımla
+   - Metotlar:
+     Task<UserProgressDto> GetWeeklyProgressAsync(Guid userId)
+     Task<UserProgressDto> GetDailyProgressAsync(Guid userId)
+
+2. Infrastructure katmanında:
+   - sealed UserProgressService : IUserProgressService implementasyonu
+   - Haftalık ilerleme: bu haftaki çözülen soru sayısı / WeeklyQuestionTarget * 100
+   - Günlük ilerleme: bugün çözülen soru sayısı / DailyTarget * 100
+   - UserActivity tablosundan SolvedAt tarihine göre filtrele
+   - AsNoTracking() kullan
+
+3. API katmanında:
+   - UserProgressController oluştur
+   - GET /api/userprogress/{userId}/weekly endpoint'i
+   - GET /api/userprogress/{userId}/daily endpoint'i
+
+Kurallar:
+- Tüm metotlar async/Task yapısında olsun
+- Mevcut sealed servis ve immutable record yapısına uy
+- Dependency Injection kaydını yap
+- XML yorum satırları ekle
