@@ -28,11 +28,11 @@ Mühendislik süreçlerine ve teknik detaylara aşağıdaki dokümanlardan ulaş
 ## 📅 10 Haftalık Yol Haritası (16 Mart - 25 Mayıs 2026)
 | Hafta | Odak Noktası | Durum |
 | :--- | :--- | :--- |
-| **1-2** | Backend API & Database Altyapısı | 🔄 Devam Ediyor |
-| **3** | SignalR & Matchmaking Motoru | 📅 Planlandı |
-| **4-5** | Web (React) Arayüz Geliştirme | 📅 Planlandı |
+| **1-2** | Backend API & Database Altyapısı | ✅ Tamamlandı |
+| **3** | SignalR & Matchmaking Motoru | ✅ Tamamlandı |
+| **4-5** | Web (React) Arayüz Geliştirme | 🔄 Devam Ediyor |
 | **6-8** | Mobile (Swift) & Fonksiyonel Programlama Entegrasyonu | 📅 Planlandı |
-| **9** | Challenge & Leaderboard Sistemleri | 📅 Planlandı |
+| **9** | Challenge & Leaderboard Sistemleri | ✅ Tamamlandı |
 | **10** | Final Testleri & Yayına Hazırlık | 📅 Planlandı |
 
 ## 💡 Temel Özellikler
