@@ -15,7 +15,7 @@ Bu proje, web ve mobil dünyasının en güçlü teknolojilerini merkezi bir .NE
 * **Backend:** ASP.NET Core 10.0 (C#), SignalR (Real-time Engine), PostgreSQL.
 * **Web (Dashboard):** React & Tailwind CSS.
 * **Mobile (iOS):** Swift & SwiftUI (Combine Framework ile Fonksiyonel Programlama yaklaşımı).
-* **AI Integration:** OpenAI API (Akıllı Profil ve Soru Analizi).
+* **AI Integration:** OpenAI API (Akıllı Profil ve Soru Analizi) - (Proje canlıya alınana kadar Mock).
 
 ## 📄 Proje Dokümantasyonu
 Mühendislik süreçlerine ve teknik detaylara aşağıdaki dokümanlardan ulaşabilirsiniz:
