@@ -30,12 +30,12 @@ builder.Services.AddControllers();
 builder.Services.AddSignalR();
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("CorsPolicy", policyBuilder =>
+    options.AddPolicy("AllowFrontend", policy =>
     {
-        policyBuilder.SetIsOriginAllowed(_ => true) // Frontend (React/Flutter/vb) local testleri için esneklik
-                     .AllowAnyMethod()
-                     .AllowAnyHeader()
-                     .AllowCredentials(); // SignalR, Credentials'ı zorunlu tutar
+        policy.WithOrigins("http://localhost:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 
@@ -49,8 +49,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseCors("CorsPolicy");
-app.UseHttpsRedirection();
+app.UseCors("AllowFrontend");
+app.UseWebSockets();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHub<ChallengeHub>("/challenge-hub");
