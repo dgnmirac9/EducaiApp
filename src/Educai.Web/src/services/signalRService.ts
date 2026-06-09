@@ -6,7 +6,7 @@ import {
 } from '@microsoft/signalr'
 
 class SignalRService {
-  private connection: HubConnection
+  connection: HubConnection
   private connectingPromise: Promise<void> | null = null
 
   constructor() {
@@ -28,6 +28,10 @@ class SignalRService {
   }
 
   async connect(): Promise<void> {
+    if (this.connection.state === HubConnectionState.Connected) return
+    if (this.connection.state === HubConnectionState.Connecting && this.connectingPromise) {
+      return this.connectingPromise
+    }
     if (this.connection.state !== HubConnectionState.Disconnected) return
     this.connectingPromise = this.connection.start()
     try {
