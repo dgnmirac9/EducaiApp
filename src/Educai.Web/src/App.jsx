@@ -63,6 +63,7 @@ function Dashboard({ userId, onLogout }) {
   const [goal, setGoal] = useState(DEFAULT_GOAL)
   const [selected, setSelected] = useState(new Set(DEFAULT_FOCUS))
   const [prefsReady, setPrefsReady] = useState(false)
+  const prefRef = useRef(null)
 
   useEffect(() => {
     let mounted = true
@@ -94,6 +95,7 @@ function Dashboard({ userId, onLogout }) {
       try {
         const data = await getPreferences(userId)
         if (!mounted || !data) return
+        prefRef.current = data
         if (Array.isArray(data.focusAreas)) setSelected(new Set(data.focusAreas))
         if (typeof data.weeklyQuestionTarget === 'number') setGoal(data.weeklyQuestionTarget)
       } catch (e) { /* keep defaults */ }
@@ -104,14 +106,26 @@ function Dashboard({ userId, onLogout }) {
 
   const saveTimer = useRef(null)
   const persist = useCallback((nextSelected, nextGoal) => {
+    console.log('persist çağrıldı, prefRef:', prefRef.current)
     if (saveTimer.current) clearTimeout(saveTimer.current)
-    saveTimer.current = setTimeout(() => {
-      updatePreferences(userId, {
-        focusAreas: Array.from(nextSelected),
+    saveTimer.current = setTimeout(async () => {
+      const pref = prefRef.current
+      if (!pref?.id) return
+      const payload = {
+        goalSubject: pref.goalSubject ?? '',
+        dailyTarget: pref.dailyTarget ?? 0,
         weeklyQuestionTarget: nextGoal,
-      }).catch(() => { /* swallow */ })
+        focusAreas: Array.from(nextSelected),
+      }
+      try {
+        const updated = await updatePreferences(pref.id, payload)
+        prefRef.current = { ...pref, ...payload, ...(updated || {}) }
+        console.log('Tercihler kaydedildi')
+      } catch (e) {
+        console.error('Tercihler kaydedilemedi:', e?.message || e)
+      }
     }, 400)
-  }, [userId])
+  }, [])
 
   const toggleSubject = (id) => {
     const next = new Set(selected)

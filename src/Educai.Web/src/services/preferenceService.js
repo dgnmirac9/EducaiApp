@@ -5,7 +5,7 @@ export async function getPreferences(userId) {
   return data
 }
 
-export async function updatePreferences(userId, payload) {
-  const { data } = await api.put(`/api/UserPreferences/${userId}`, payload)
+export async function updatePreferences(prefId, payload) {
+  const { data } = await api.put(`/api/UserPreferences/${prefId}`, payload)
   return data
 }
