@@ -13,11 +13,6 @@ export function ProfileCard({ avatarKey, setAvatarKey, name, xp, xpMax, level, l
       <div className="xp-medal">
         <div className="medal-coin">{level}</div>
         <div className="medal-ribbon">{xp}/{xpMax} XP</div>
-        <div className="medal-stars">
-          <Icon.star />
-          <Icon.star />
-          <Icon.star />
-        </div>
       </div>
       <div className="profile-body">
         <div className="avatar-stage">

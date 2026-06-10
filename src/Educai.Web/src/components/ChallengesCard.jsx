@@ -1,11 +1,39 @@
 import { useEffect, useState } from 'react'
 import { Glass } from './Glass'
 import { getChallenges } from '../services/challengeService'
+import { ChallengeModal } from './ChallengeModal'
 
 const MOCK_ITEMS = [
-  { kind: 'podium', name: 'Aylık Challenge', sub: 'Kalan süre: 10 gün', cta: 'Katıl' },
-  { kind: 'rank',   name: 'Sıralama Yarışı', sub: '3 gün · 200 XP',     cta: 'Başla' },
-  { kind: 'solver', name: 'Soru Çöz Sprint', sub: '60 dk · 50 soru',    cta: 'Çöz' },
+  {
+    kind: 'podium',
+    name: 'Aylık Challenge',
+    sub: 'Kalan süre: 10 gün',
+    cta: 'Katıl',
+    description: 'Ay boyunca en çok soru çözen 10 kişi özel rozet kazanır.',
+    endDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+    xpReward: 1200,
+    difficultyWeight: 1.0,
+  },
+  {
+    kind: 'rank',
+    name: 'Sıralama Yarışı',
+    sub: '3 gün · 200 XP',
+    cta: 'Başla',
+    description: 'Sıralamada 10 basamak yükselen herkes ödüllü.',
+    endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+    xpReward: 200,
+    difficultyWeight: 1.5,
+  },
+  {
+    kind: 'solver',
+    name: 'Soru Çöz Sprint',
+    sub: '60 dk · 50 soru',
+    cta: 'Çöz',
+    description: '60 dakika içinde 50 soru çöz, sprint rozetini kap.',
+    endDate: null,
+    xpReward: 500,
+    difficultyWeight: 2.0,
+  },
 ]
 
 const KINDS = ['podium', 'rank', 'solver']
@@ -44,6 +72,7 @@ function trophyMedal(kind) {
 export function ChallengesCard() {
   const [items, setItems] = useState(MOCK_ITEMS)
   const [loading, setLoading] = useState(true)
+  const [selectedChallenge, setSelectedChallenge] = useState(null)
 
   useEffect(() => {
     let mounted = true
@@ -63,6 +92,10 @@ export function ChallengesCard() {
             name: c.title || c.name || `Challenge ${i + 1}`,
             sub,
             cta: 'Katıl',
+            description: c.description,
+            endDate: c.endDate,
+            xpReward: c.xpReward,
+            difficultyWeight: c.difficultyWeight,
           }
         })
         setItems(mapped)
@@ -78,21 +111,35 @@ export function ChallengesCard() {
   }, [])
 
   return (
-    <Glass className="challenges" style={loading ? { opacity: 0.7 } : undefined}>
-      <div className="section-h">
-        <h3>Görevler</h3>
-        <span className="pill" style={{ marginLeft: 'auto' }}>+1200 XP</span>
-      </div>
-      {items.map((it, i) => (
-        <div key={i} className="ch-tile">
-          <div className="ch-ico">{trophyMedal(it.kind)}</div>
-          <div>
-            <div className="ch-name">{it.name}</div>
-            <div className="ch-sub">{it.sub}</div>
-          </div>
-          <button className="ch-cta">{it.cta}</button>
+    <>
+      <Glass className="challenges" style={loading ? { opacity: 0.7 } : undefined}>
+        <div className="section-h">
+          <h3>Düellolar</h3>
+          <span className="pill" style={{ marginLeft: 'auto' }}>+1200 XP</span>
         </div>
-      ))}
-    </Glass>
+        {items.map((it, i) => (
+          <div key={i} className="ch-tile">
+            <div className="ch-ico">{trophyMedal(it.kind)}</div>
+            <div>
+              <div className="ch-name">{it.name}</div>
+              <div className="ch-sub">{it.sub}</div>
+            </div>
+            <button
+              className="ch-cta"
+              onClick={() => setSelectedChallenge(it)}
+            >
+              {it.cta}
+            </button>
+          </div>
+        ))}
+      </Glass>
+
+      {selectedChallenge && (
+        <ChallengeModal
+          challenge={selectedChallenge}
+          onClose={() => setSelectedChallenge(null)}
+        />
+      )}
+    </>
   )
 }

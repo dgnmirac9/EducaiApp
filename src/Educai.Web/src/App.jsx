@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Icon } from './components/Icons'
 import { PIXEL } from './components/PixelAvatars'
 import { Sidebar } from './components/Sidebar'
+import { HamburgerMenu } from './components/HamburgerMenu'
+import { BottomNav } from './components/BottomNav'
 import { Topbar } from './components/Topbar'
 import { ProfileCard } from './components/ProfileCard'
 import { WeeklyGoal } from './components/WeeklyGoal'
@@ -151,6 +153,7 @@ function Dashboard({ userId, onLogout }) {
 
   return (
     <div className="shell" data-screen-label="01 Dashboard">
+      <HamburgerMenu active={active} setActive={setActive} />
       <Sidebar active={active} setActive={setActive} />
 
       <main className="main">
@@ -212,6 +215,8 @@ function Dashboard({ userId, onLogout }) {
         <Leaderboard userId={userId} />
         <AIChat />
       </aside>
+
+      <BottomNav active={active} setActive={setActive} />
     </div>
   )
 }

@@ -3,22 +3,55 @@ import { Icon } from './Icons'
 
 export function Sidebar({ active, setActive }) {
   const navigate = useNavigate()
+
+  const scrollToSubjects = () => {
+    const el = document.querySelector('.subjects')
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   const items = [
-    { id: 'home', label: 'Home', icon: Icon.home, path: '/' },
-    { id: 'subjects', label: 'Subjects', icon: Icon.books, badge: '6' },
-    { id: 'challenges', label: 'Challenges', icon: Icon.trophy, badge: '3', path: '/duel' },
-    { id: 'quests', label: 'Quests', icon: Icon.rocket },
-    { id: 'profile', label: 'Profile', icon: Icon.user },
-  ]
-  const tools = [
-    { id: 'notif', label: 'Notifications', icon: Icon.bell },
-    { id: 'settings', label: 'Settings', icon: Icon.settings },
+    {
+      id: 'home',
+      label: 'Ana Sayfa',
+      icon: Icon.home,
+      onClick: () => { setActive('home'); navigate('/') },
+    },
+    {
+      id: 'subjects',
+      label: 'Dersler',
+      icon: Icon.books,
+      badge: '6',
+      onClick: () => { setActive('subjects'); scrollToSubjects() },
+    },
+    {
+      id: 'challenges',
+      label: 'Görevler',
+      icon: Icon.trophy,
+      badge: '3',
+      onClick: () => { setActive('challenges') },
+    },
+    {
+      id: 'profile',
+      label: 'Profil',
+      icon: Icon.user,
+      onClick: () => { setActive('profile'); navigate('/profile') },
+    },
   ]
 
-  const handle = (it) => {
-    setActive(it.id)
-    if (it.path) navigate(it.path)
-  }
+  const tools = [
+    {
+      id: 'notif',
+      label: 'Bildirimler',
+      icon: Icon.bell,
+      onClick: () => alert('Yakında!'),
+    },
+    {
+      id: 'settings',
+      label: 'Ayarlar',
+      icon: Icon.settings,
+      onClick: () => alert('Yakında!'),
+    },
+  ]
 
   return (
     <aside className="sidebar glass">
@@ -29,17 +62,17 @@ export function Sidebar({ active, setActive }) {
           <div className="small">Learning Quest</div>
         </div>
       </div>
-      <div className="nav-section">Main</div>
+      <div className="nav-section">Ana</div>
       {items.map((it) => (
-        <div key={it.id} className={`nav-item ${active === it.id ? 'active' : ''}`} onClick={() => handle(it)}>
+        <div key={it.id} className={`nav-item ${active === it.id ? 'active' : ''}`} onClick={it.onClick}>
           <div className="ico"><it.icon /></div>
           <div>{it.label}</div>
           {it.badge && <div className="badge">{it.badge}</div>}
         </div>
       ))}
-      <div className="nav-section">Account</div>
+      <div className="nav-section">Hesap</div>
       {tools.map((it) => (
-        <div key={it.id} className="nav-item" onClick={() => handle(it)}>
+        <div key={it.id} className="nav-item" onClick={it.onClick}>
           <div className="ico"><it.icon /></div>
           <div>{it.label}</div>
         </div>

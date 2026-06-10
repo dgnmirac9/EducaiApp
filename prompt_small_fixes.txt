@@ -1,0 +1,18 @@
+components.jsx ve styles.css dosyalarında şu küçük değişiklikleri yap:
+
+1. Sidebar'dan "Düello" nav item'ını tamamen kaldır.
+
+2. ChallengesCard'daki "Görevler" başlık metnini "Düellolar" olarak değiştir.
+   Sadece metni değiştir, başka hiçbir şeye dokunma.
+
+3. Dashboard orta panel (.main class'ı) scroll bar'ını gizle:
+   styles.css'te .main class'ına şunu ekle:
+   scrollbar-width: none; /* Firefox */
+   -ms-overflow-style: none; /* IE/Edge */
+   
+   Ve şunu ekle:
+   .main::-webkit-scrollbar {
+     display: none; /* Chrome/Safari */
+   }
+
+Sadece bu 3 değişikliği yap, başka hiçbir şeye dokunma.
