@@ -1,0 +1,173 @@
+Görev: Educai iOS uygulamasını wireframe'e uygun şekilde yeniden tasarla.
+
+Proje: mobile/EducaiMobile/EducaiMobile/ klasöründeki Swift dosyaları.
+Hedef: iPhone için SwiftUI, wireframe'e birebir uygun tasarım.
+
+=== WIREFRAME ÖZETI ===
+
+Ekran 1 - Profil (ProfileView):
+- Üst: XP badge (level coin sol + "799/800 XP" sarı pill + 3 yıldız sağ)
+  * Level coin: büyük sarı daire, içinde level numarası
+  * XP pill: sarı/altın gradient, bold metin
+  * Yıldızlar: ortadaki büyük, yanlardaki küçük
+- Ana kart (glassmorphism, mor):
+  * Kullanıcı adı + kalem ikonu
+  * Avatar dairesi (glowing, pixel-art placeholder)
+  * Sol/sağ ok ile karakter değiştirme
+  * "DÜZENLE" gri glossy buton
+- Alt kart: Leaderboard top 3
+  * Her satır: pixel-art avatar + "#1 - user123" + "(lvl 15)"
+- Sağ kenar: 3 yuvarlak altın buton
+  * Challenge (kalan süre metni)
+  * Sıralama
+  * Soru Çöz
+
+Ekran 2 - Profil & Tercihler (PreferencesView):
+- Başlık: "Educai" + "Profil & Tercihler"
+- AI Nickname Oluşturucu (Premium):
+  * Input + "Nickname Öner" pembe buton
+  * 3 chip önerisi (altın border, yıldız ikonlar)
+- Öğrenme Odak Alanları (Zorunlu):
+  * 2 sütun grid, 8 ders
+  * Seçili: yeşil border + glow
+  * Her ders: ikon + isim
+- Haftalık Soru Hedefi:
+  * [+] [150] [-] stepper
+  * Hedef ikonu altında
+- AI Asistan Entegrasyonu:
+  * Robot avatar + mesaj balonu
+  * "Hazırım!" butonu
+- Sağ kenar: aynı 3 yuvarlak buton
+
+Tab bar: Profil | Tercihler (alt orta, glassmorphism)
+
+Arka plan: koyu mor gradient (#3A2A78 → #2A1B5E → #180E3A)
+Blueprint grid pattern (beyaz, çok hafif)
+Mor glow blooms
+
+=== YAPILACAKLAR ===
+
+1. Theme.swift — koru, değiştirme
+
+2. AppModel.swift — sadece şunu düzelt:
+   - import Combine ekle
+   - final class AppModel: ObservableObject { } koru
+   - Tüm @Published property'ler kalsın
+
+3. Components.swift — şunları düzelt/ekle:
+
+   XPBadge: wireframe'e uygun
+   - Sol: sarı daire coin (level)
+   - Orta: sarı pill "799/800 XP"
+   - Sağ: 3 yıldız (ortadaki büyük)
+   - Tüm öğeler tek HStack içinde
+   - Pill: LinearGradient gold→goldDeep, Capsule
+   - overflow görünür olsun (clipShape kaldır)
+
+   SideRail: sağ kenarda dikey 3 buton
+   - Her biri: altın gradient Circle + SF Symbol + başlık + alt metin
+   - Boyut: 60x60
+   - Sağ kenara sabit (padding trailing 8)
+
+   AvatarCarousel: 
+   - Büyük daire (190px), glowing purple
+   - Sol < sağ > oklar beyaz, bold
+   - Placeholder: person.fill SF symbol
+
+   GlossyButton: 
+   - Gri gradient, capsule shape
+   - "DÜZENLE" için kullanılacak
+
+   LeaderboardRow:
+   - Avatar circle (44px) + "#1 - isim" bold + "(lvl X)" muted
+   - Divider aralarında
+
+4. ProfileView.swift — komple yeniden yaz:
+
+   ZStack {
+     EducaiBackground()
+     
+     HStack(alignment: .top, spacing: 0) {
+       // Ana içerik (ScrollView)
+       ScrollView {
+         VStack(spacing: 16) {
+           XPBadge(...)  // üstte, kartın dışında
+           
+           GlassCard {  // Ana profil kartı
+             VStack {
+               // Username + pencil
+               HStack { Text(username) + pencil button }
+               
+               // Avatar carousel
+               AvatarCarousel(...)
+               
+               // DÜZENLE butonu
+               GlossyButton("DÜZENLE") {}
+             }
+           }
+           
+           GlassCard {  // Leaderboard
+             VStack {
+               ForEach(leaderboard) { LeaderboardRow($0) }
+             }
+           }
+         }
+         .padding(.horizontal, 16)
+         .padding(.bottom, 100) // tab bar için
+       }
+       
+       // Sağ rail (sabit)
+       SideRail(items: railItems)
+         .padding(.top, 60)
+         .padding(.trailing, 8)
+     }
+   }
+
+5. PreferencesView.swift — komple yeniden yaz:
+
+   ZStack {
+     EducaiBackground()
+     
+     HStack(alignment: .top, spacing: 0) {
+       ScrollView {
+         VStack(spacing: 0) {
+           Text("Educai").font(.display(34, .black)) // başlık
+           
+           GlassCard {
+             VStack(spacing: 18) {
+               Text("Profil & Tercihler")
+               nicknameSection    // AI Nickname
+               subjectsSection    // 2 sütun grid
+               goalSection        // stepper
+               assistantSection   // AI asistan
+             }
+           }
+         }
+         .padding(.horizontal, 16)
+         .padding(.bottom, 100)
+       }
+       
+       SideRail(items: railItems)
+         .padding(.top, 40)
+         .padding(.trailing, 8)
+     }
+   }
+
+6. EducaiApp.swift — koru, @main burada kalsın
+
+7. ContentView.swift — varsa içini tamamen boşalt:
+   import SwiftUI
+   struct ContentView: View {
+     var body: some View { EmptyView() }
+   }
+
+=== ÖNEMLI KURALLAR ===
+- iOS 16+ uyumlu (ObservableObject kullan, @Observable değil)
+- import Combine her ObservableObject dosyasında olsun
+- @main sadece EducaiApp.swift'te olsun
+- SideRail sağ kenara yapışık, ScrollView'ın dışında
+- XPBadge kartın üstüne taşan (zIndex: 1, offset: y -20) değil,
+  ScrollView içinde kartın hemen üstünde normal akışta
+- GlassCard'da clipShape kullanma (XPBadge kesilmesin)
+- Tüm renkler Theme.swift'ten gelsin
+- Preview her dosyada ekle

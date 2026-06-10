@@ -1,0 +1,375 @@
+Görev: Educai iOS uygulamasına Düello sistemi ekle.
+
+mobile/EducaiMobile/EducaiMobile/ klasörüne 2 yeni dosya oluştur:
+
+=== 1. DuelLobbyView.swift ===
+
+struct DuelLobbyView: View:
+- var userId: String
+- var onBack: () -> Void
+
+@State var isSearching: Bool = false
+@State var statusMessage: String = "Düello bulmak için hazır mısın?"
+@State var matchId: String? = nil
+@State var navigateToDuel: Bool = false
+
+ZStack {
+  EducaiBackground()
+  
+  VStack(spacing: 32) {
+    // Üst bar
+    HStack {
+      Button { onBack() } label: {
+        HStack(spacing: 6) {
+          Image(systemName: "chevron.left")
+          Text("Geri")
+        }
+        .foregroundStyle(.white.opacity(0.8))
+        .font(.system(size: 16, weight: .bold, design: .rounded))
+      }
+      .buttonStyle(.plain)
+      Spacer()
+      Text("⚔️ Düello")
+        .font(.system(size: 22, weight: .black, design: .rounded))
+        .foregroundStyle(.white)
+      Spacer()
+      // boş alan için simetri
+      Text("Geri").opacity(0)
+    }
+    .padding(.horizontal, 20)
+    .padding(.top, 16)
+    
+    Spacer()
+    
+    // Animasyonlu VS ikonu
+    GlassCard(cornerRadius: 30, padding: 32) {
+      VStack(spacing: 24) {
+        // Oyuncu ikonları
+        HStack(spacing: 40) {
+          VStack(spacing: 8) {
+            ZStack {
+              Circle()
+                .fill(Palette.glassTint.opacity(0.5))
+                .frame(width: 80, height: 80)
+              Image(systemName: "person.fill")
+                .font(.system(size: 36))
+                .foregroundStyle(Palette.neon)
+            }
+            Text(userId.prefix(8) + "...")
+              .font(.system(size: 12, weight: .bold, design: .rounded))
+              .foregroundStyle(.white.opacity(0.8))
+          }
+          
+          Text("VS")
+            .font(.display(36, .black))
+            .foregroundStyle(Palette.gold)
+            .shadow(color: Palette.gold.opacity(0.6), radius: 8)
+          
+          VStack(spacing: 8) {
+            ZStack {
+              Circle()
+                .fill(Palette.glassTint.opacity(0.5))
+                .frame(width: 80, height: 80)
+              Image(systemName: isSearching ? "ellipsis" : "questionmark")
+                .font(.system(size: 36))
+                .foregroundStyle(.white.opacity(0.5))
+            }
+            Text(isSearching ? "Aranıyor..." : "Rakip")
+              .font(.system(size: 12, weight: .bold, design: .rounded))
+              .foregroundStyle(.white.opacity(0.8))
+          }
+        }
+        
+        // Durum mesajı
+        Text(statusMessage)
+          .font(.system(size: 15, weight: .semibold, design: .rounded))
+          .foregroundStyle(.white.opacity(0.8))
+          .multilineTextAlignment(.center)
+        
+        // Buton
+        if !isSearching {
+          Button { startSearch() } label: {
+            Text("⚔️ Düello Bul")
+              .font(.display(20, .black))
+              .foregroundStyle(.white)
+              .frame(maxWidth: .infinity)
+              .padding(.vertical, 16)
+              .background(
+                RoundedRectangle(cornerRadius: 16)
+                  .fill(LinearGradient(
+                    colors: [Palette.neon, Palette.neonStrong],
+                    startPoint: .leading, endPoint: .trailing
+                  ))
+              )
+              .shadow(color: Palette.neon.opacity(0.5), radius: 12, y: 4)
+          }
+          .buttonStyle(.plain)
+        } else {
+          // Loading spinner
+          ProgressView()
+            .progressViewStyle(.circular)
+            .tint(Palette.neon)
+            .scaleEffect(1.5)
+        }
+      }
+    }
+    .padding(.horizontal, 20)
+    
+    Spacer()
+  }
+}
+.navigationDestination(isPresented: $navigateToDuel) {
+  if let mid = matchId {
+    DuelView(userId: userId, matchId: mid, onBack: onBack)
+  }
+}
+
+// MARK: - Fonksiyonlar
+
+func startSearch():
+  isSearching = true
+  statusMessage = "Rakip aranıyor..."
+  Task {
+    do {
+      // 1. Kuyruğa katıl
+      try await NetworkService.shared.joinQueue(userId: userId)
+      // 2. Maç bul (polling — 10 kez 2 saniye aralıkla)
+      for _ in 0..<10 {
+        try await Task.sleep(nanoseconds: 2_000_000_000)
+        if let mid = try? await NetworkService.shared.findMatch(userId: userId) {
+          await MainActor.run {
+            matchId = mid
+            navigateToDuel = true
+            isSearching = false
+          }
+          return
+        }
+      }
+      // Maç bulunamadı
+      await MainActor.run {
+        isSearching = false
+        statusMessage = "Rakip bulunamadı. Tekrar dene."
+      }
+    } catch {
+      await MainActor.run {
+        isSearching = false
+        statusMessage = "Hata: \(error.localizedDescription)"
+      }
+    }
+  }
+
+=== 2. DuelView.swift ===
+
+struct DuelView: View:
+- var userId: String
+- var matchId: String
+- var onBack: () -> Void
+
+@State var myXP: Int = 0
+@State var oppXP: Int = 0
+@State var log: [String] = []
+@State var isFinished: Bool = false
+
+ZStack {
+  EducaiBackground()
+  
+  VStack(spacing: 16) {
+    // Üst bar
+    HStack {
+      Button { onBack() } label: {
+        HStack(spacing: 6) {
+          Image(systemName: "chevron.left")
+          Text("Lobiye Dön")
+        }
+        .foregroundStyle(.white.opacity(0.8))
+        .font(.system(size: 14, weight: .bold, design: .rounded))
+      }
+      .buttonStyle(.plain)
+      Spacer()
+      Text("Maç: \(matchId.prefix(8))")
+        .font(.system(size: 13, weight: .semibold, design: .rounded))
+        .foregroundStyle(.white.opacity(0.6))
+    }
+    .padding(.horizontal, 20)
+    .padding(.top, 16)
+    
+    // Skor kartları
+    HStack(spacing: 12) {
+      // Sen
+      GlassCard(cornerRadius: 20, padding: 16) {
+        VStack(spacing: 6) {
+          Text("SEN")
+            .font(.system(size: 11, weight: .heavy, design: .rounded))
+            .foregroundStyle(.white.opacity(0.6))
+          Text(userId.prefix(8) + "...")
+            .font(.system(size: 14, weight: .black, design: .rounded))
+            .foregroundStyle(.white)
+          Text("\(myXP) XP")
+            .font(.display(24, .black))
+            .foregroundStyle(Palette.neon)
+        }
+        .frame(maxWidth: .infinity)
+      }
+      
+      Text("VS")
+        .font(.display(20, .black))
+        .foregroundStyle(Palette.gold)
+      
+      // Rakip
+      GlassCard(cornerRadius: 20, padding: 16) {
+        VStack(spacing: 6) {
+          Text("RAKİP")
+            .font(.system(size: 11, weight: .heavy, design: .rounded))
+            .foregroundStyle(.white.opacity(0.6))
+          Text("Rakip")
+            .font(.system(size: 14, weight: .black, design: .rounded))
+            .foregroundStyle(.white)
+          Text("\(oppXP) XP")
+            .font(.display(24, .black))
+            .foregroundStyle(Palette.pink)
+        }
+        .frame(maxWidth: .infinity)
+      }
+    }
+    .padding(.horizontal, 20)
+    
+    // Butonlar
+    VStack(spacing: 12) {
+      Button {
+        myXP += 10
+        let time = DateFormatter.localizedString(from: Date(), dateStyle: .none, timeStyle: .medium)
+        log.insert("[\(time)] Doğru cevap! +10 XP", at: 0)
+      } label: {
+        Text("✅ Doğru Cevap (+10 XP)")
+          .font(.display(18, .black))
+          .foregroundStyle(.white)
+          .frame(maxWidth: .infinity)
+          .padding(.vertical, 16)
+          .background(
+            RoundedRectangle(cornerRadius: 16)
+              .fill(LinearGradient(
+                colors: [Color(hex: "#2ECC71"), Color(hex: "#27AE60")],
+                startPoint: .leading, endPoint: .trailing
+              ))
+          )
+          .shadow(color: Color(hex: "#2ECC71").opacity(0.4), radius: 8, y: 3)
+      }
+      .buttonStyle(.plain)
+      .disabled(isFinished)
+      
+      Button {
+        isFinished = true
+        Task {
+          try? await NetworkService.shared.finishMatch(matchId: matchId)
+          onBack()
+        }
+      } label: {
+        Text("🏁 Maçı Bitir")
+          .font(.display(18, .black))
+          .foregroundStyle(.white)
+          .frame(maxWidth: .infinity)
+          .padding(.vertical, 16)
+          .background(
+            RoundedRectangle(cornerRadius: 16)
+              .fill(LinearGradient(
+                colors: [Palette.pink, Palette.pinkDeep],
+                startPoint: .leading, endPoint: .trailing
+              ))
+          )
+          .shadow(color: Palette.pink.opacity(0.4), radius: 8, y: 3)
+      }
+      .buttonStyle(.plain)
+    }
+    .padding(.horizontal, 20)
+    
+    // Canlı Log
+    GlassCard(cornerRadius: 20, padding: 16) {
+      VStack(alignment: .leading, spacing: 8) {
+        Text("Canlı Log")
+          .font(.system(size: 16, weight: .heavy, design: .rounded))
+          .foregroundStyle(.white)
+        
+        if log.isEmpty {
+          Text("Henüz aktivite yok...")
+            .font(.system(size: 13, design: .rounded))
+            .foregroundStyle(.white.opacity(0.4))
+        } else {
+          ForEach(log.prefix(5), id: \.self) { entry in
+            Text(entry)
+              .font(.system(size: 12, weight: .medium, design: .monospaced))
+              .foregroundStyle(.white.opacity(0.7))
+          }
+        }
+      }
+      .frame(maxWidth: .infinity, alignment: .leading)
+    }
+    .padding(.horizontal, 20)
+    
+    Spacer()
+  }
+}
+
+=== 3. NetworkService.swift — şu fonksiyonları ekle ===
+
+// Matchmaking
+func joinQueue(userId: String) async throws:
+  POST /api/Matchmaking/join-queue
+  body: { "userId": userId }
+
+func findMatch(userId: String) async throws -> String?:
+  GET /api/Matchmaking/find-match/{userId}
+  response: { "matchId": "..." } veya 404
+  404 gelirse nil döndür, hata fırlatma
+
+func finishMatch(matchId: String) async throws:
+  POST /api/Matchmaking/finish-match/{matchId}
+  body boş
+
+=== 4. ProfileView.swift — Düello butonu ekle ===
+
+StatCard'ların altına, Leaderboard'un üstüne:
+
+Button {
+  showDuel = true
+} label: {
+  HStack(spacing: 8) {
+    Image(systemName: "bolt.fill")
+      .font(.system(size: 18, weight: .bold))
+    Text("⚔️ Düello Bul")
+      .font(.display(18, .black))
+  }
+  .foregroundStyle(.white)
+  .frame(maxWidth: .infinity)
+  .padding(.vertical, 14)
+  .background(
+    RoundedRectangle(cornerRadius: 16)
+      .fill(LinearGradient(
+        colors: [Palette.neon, Palette.neonStrong],
+        startPoint: .leading, endPoint: .trailing
+      ))
+  )
+  .shadow(color: Palette.neon.opacity(0.5), radius: 10, y: 3)
+}
+.buttonStyle(.plain)
+.padding(.horizontal, 4)
+
+ProfileView'a ekle:
+@State var showDuel: Bool = false
+
+.sheet(isPresented: $showDuel) {
+  NavigationStack {
+    DuelLobbyView(userId: userId, onBack: { showDuel = false })
+  }
+}
+
+=== 5. EducaiApp.swift ===
+
+ProfileView'a userId parametresi geç:
+ProfileView(userId: userId, onLogout: { ... })
+
+=== KURALLAR ===
+- iOS 16+ uyumlu
+- async/await kullan
+- NavigationStack ile sayfa geçişi
+- Tüm renkler Theme.swift'ten
+- Preview her dosyada ekle

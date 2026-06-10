@@ -1,0 +1,53 @@
+mobile/EducaiMobile/EducaiMobile/ klasöründeki dosyalarda şu değişiklikleri yap:
+
+1. NetworkService.swift — URL'leri düzelt:
+
+getWeeklyProgress fonksiyonunda:
+GET /api/UserProgress/weekly/{id}  →  GET /api/userprogress/{userId}/weekly
+
+getLeaderboard fonksiyonunu kaldır veya mock döndür:
+func getLeaderboard(count: Int) async throws -> [LeaderboardDTO] {
+    throw APIError.httpError(404)
+}
+
+2. AppModel.swift — leaderboard hatasını sessizce geç (zaten öyle ama kontrol et)
+boardTask hata alınca mock leaderboard korunsun.
+
+3. ProfileView.swift — çıkış butonu ekle:
+
+ProfileView'a şu parametreyi ekle:
+var onLogout: () -> Void = {}
+
+ScrollView içinde VStack'in en üstüne:
+HStack {
+  Spacer()
+  Button {
+    onLogout()
+  } label: {
+    HStack(spacing: 4) {
+      Image(systemName: "rectangle.portrait.and.arrow.right")
+        .font(.system(size: 14, weight: .bold))
+      Text("Çıkış")
+        .font(.system(size: 13, weight: .bold, design: .rounded))
+    }
+    .foregroundStyle(.white.opacity(0.8))
+    .padding(.horizontal, 12)
+    .padding(.vertical, 6)
+    .background(Capsule().fill(Color.red.opacity(0.25)))
+    .overlay(Capsule().stroke(Color.red.opacity(0.5), lineWidth: 1))
+  }
+  .buttonStyle(.plain)
+}
+.padding(.horizontal, 16)
+.padding(.top, 4)
+
+4. EducaiApp.swift — onLogout callback ekle:
+
+RootView'da ProfileView'a onLogout parametresi geç:
+ProfileView(onLogout: {
+  UserDefaults.standard.removeObject(forKey: "userId")
+  userId = ""
+  isLoggedIn = false
+})
+
+Sadece bu 4 değişikliği yap.

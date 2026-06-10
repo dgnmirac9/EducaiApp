@@ -1,0 +1,195 @@
+Görev: Educai iOS uygulamasını backend API'ye bağla.
+
+Backend URL: http://localhost:5150
+Test UserId: 019dabb7-fbce-7bf3-a25e-e521f8ce663a
+
+=== 1. NetworkService.swift — komple yaz ===
+
+import Foundation
+
+class NetworkService {
+    static let shared = NetworkService()
+    private let baseURL = "http://localhost:5150"
+    
+    // MARK: - User
+    func getUser(userId: String) async throws -> UserDTO
+    
+    // MARK: - Progress  
+    func getWeeklyProgress(userId: String) async throws -> WeeklyProgressDTO
+    
+    // MARK: - Leaderboard
+    func getLeaderboard(count: Int) async throws -> [LeaderboardDTO]
+    
+    // MARK: - Preferences
+    func getPreferences(userId: String) async throws -> PreferencesDTO
+    func updatePreferences(prefId: String, payload: UpdatePreferencesDTO) async throws -> PreferencesDTO
+    
+    // MARK: - Nickname
+    func generateNickname(userId: String, keywords: [String]) async throws -> NicknameResponseDTO
+    
+    // MARK: - Generic request
+    private func request<T: Decodable>(_ path: String, method: String = "GET", body: Encodable? = nil) async throws -> T
+}
+
+DTO'lar (backend response'larına uygun):
+
+struct UserDTO: Codable {
+    let id: String
+    let username: String
+    let level: Int
+    let xp: Int
+    let xpForLevel: Int
+    let isPremium: Bool
+}
+
+struct WeeklyProgressDTO: Codable {
+    let weeklyQuestionTarget: Int
+    let totalAnswered: Int
+    let percentage: Double
+    let dailyBreakdown: [DailyBreakdownDTO]?
+}
+
+struct DailyBreakdownDTO: Codable {
+    let day: String
+    let count: Int
+}
+
+struct LeaderboardDTO: Codable {
+    let rank: Int
+    let username: String
+    let level: Int
+    let totalXP: Int
+}
+
+struct PreferencesDTO: Codable {
+    let id: String
+    let userId: String
+    let focusAreas: [String]
+    let weeklyQuestionTarget: Int
+    let dailyTarget: Int
+    let goalSubject: String?
+}
+
+struct UpdatePreferencesDTO: Codable {
+    let focusAreas: [String]
+    let weeklyQuestionTarget: Int
+    let dailyTarget: Int
+    let goalSubject: String?
+}
+
+struct NicknameResponseDTO: Codable {
+    let nicknames: [String]?
+    let nickname: String?
+}
+
+Hata yönetimi:
+enum APIError: Error {
+    case invalidURL
+    case noData
+    case decodingError(Error)
+    case httpError(Int)
+    case networkError(Error)
+}
+
+=== 2. LoginView.swift — yeni dosya oluştur ===
+
+struct LoginView: View:
+- Mor gradient arka plan (EducaiBackground)
+- Ortada GlassCard içinde:
+  * "Educai" başlığı (büyük, parlak)
+  * "Öğrenci ID" label
+  * UUID TextField (placeholder: "019dabb7-...")
+  * "Giriş Yap" butonu (Palette.neon rengi)
+  * Hata mesajı (kırmızı, UUID geçersizse)
+- UUID validasyonu: 8-4-4-4-12 formatı kontrol et
+- Başarılıysa UserDefaults'a kaydet:
+  UserDefaults.standard.set(userId, forKey: "userId")
+- @State var userId: String = ""
+- @State var errorMessage: String = ""
+- @State var isLoading: Bool = false
+- onLogin: (String) -> Void callback
+
+=== 3. AppModel.swift — backend bağlantısı ekle ===
+
+Mevcut mock verileri koru (fallback olarak).
+Şunları ekle:
+
+@Published var isLoading: Bool = false
+@Published var errorMessage: String? = nil
+@Published var prefId: String? = nil
+
+func loadFromBackend(userId: String) async:
+  async let user = NetworkService.shared.getUser(userId: userId)
+  async let progress = NetworkService.shared.getWeeklyProgress(userId: userId)
+  async let leaderboard = NetworkService.shared.getLeaderboard(count: 5)
+  async let prefs = NetworkService.shared.getPreferences(userId: userId)
+  
+  Başarılıysa:
+  - username = user.username
+  - level = user.level
+  - xp = user.xp
+  - xpForLevel = user.xpForLevel
+  - weeklyGoal = prefs.weeklyQuestionTarget
+  - prefId = prefs.id
+  - selectedSubjects = Set(prefs.focusAreas)
+  - leaderboard array güncelle
+  
+  Hata olursa: errorMessage set et, mock veri kalsın
+
+func savePreferences(userId: String) async:
+  guard let prefId = prefId else { return }
+  let payload = UpdatePreferencesDTO(
+    focusAreas: Array(selectedSubjects),
+    weeklyQuestionTarget: weeklyGoal,
+    dailyTarget: 10,
+    goalSubject: nil
+  )
+  try await NetworkService.shared.updatePreferences(prefId: prefId, payload: payload)
+
+func generateNickname(userId: String) async:
+  let keywords = nicknameKeyword.split(separator: " ").map(String.init)
+  let response = try await NetworkService.shared.generateNickname(userId: userId, keywords: keywords)
+  if let nicks = response.nicknames { suggestedNicknames = nicks }
+  else if let nick = response.nickname { suggestedNicknames = [nick] }
+
+=== 4. EducaiApp.swift — Login flow ekle ===
+
+RootView'a şunları ekle:
+@State private var isLoggedIn: Bool = false
+@State private var userId: String = ""
+
+// App açılınca UserDefaults'tan kontrol et:
+.onAppear {
+  if let saved = UserDefaults.standard.string(forKey: "userId") {
+    userId = saved
+    isLoggedIn = true
+    Task { await model.loadFromBackend(userId: saved) }
+  }
+}
+
+isLoggedIn false ise: LoginView göster
+isLoggedIn true ise: mevcut tab bar + ProfileView/PreferencesView göster
+
+LoginView'dan onLogin callback:
+onLogin: { uid in
+  userId = uid
+  isLoggedIn = true
+  Task { await model.loadFromBackend(userId: uid) }
+}
+
+=== 5. ProfileView.swift ve PreferencesView.swift ===
+
+Her ikisine de userId: String parametresi ekle.
+ProfileView'da leaderboard AppModel'den gelsin.
+PreferencesView'da:
+- toggleSubject sonrası: Task { await model.savePreferences(userId: userId) }
+- incrementGoal/decrementGoal sonrası: Task { await model.savePreferences(userId: userId) }
+- Nickname Öner butonu: Task { await model.generateNickname(userId: userId) }
+
+=== KURALLAR ===
+- iOS 16+ uyumlu
+- async/await kullan, completion handler yok
+- Tüm network çağrıları MainActor'da UI güncelle:
+  await MainActor.run { self.username = ... }
+- try/catch her yerde
+- Mock veri fallback olarak korunsun

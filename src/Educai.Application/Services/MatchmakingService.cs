@@ -31,18 +31,27 @@ public sealed class MatchmakingService(EducaiDbContext dbContext) : IMatchmaking
 
     public async Task<ChallengeMatchDto?> FindMatchAsync(Guid userId, CancellationToken cancellationToken = default)
     {
+        var existingMatch = await dbContext.ChallengeMatches
+            .Where(m => m.MatchStatus == MatchStatus.Active &&
+                        (m.Player1Id == userId || m.Player2Id == userId))
+            .OrderByDescending(m => m.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (existingMatch is not null)
+            return new ChallengeMatchDto(existingMatch.Id, existingMatch.ChallengeId,
+                existingMatch.Player1Id, existingMatch.Player2Id, existingMatch.WinnerId,
+                existingMatch.MatchStatus, existingMatch.CreatedAt);
+
         var currentUser = await dbContext.Users
             .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
 
         if (currentUser is null || !currentUser.IsSearchingForMatch)
             return null; // Kullanıcı yok veya arama yapmıyor
 
-        // Uygun rakip bul (+/- 2 level toleransı), kendisi hariç
+        // Uygun rakip bul, kendisi hariç
         var opponent = await dbContext.Users
-            .Where(u => u.IsSearchingForMatch && 
-                        u.Id != currentUser.Id &&
-                        u.Level >= currentUser.Level - 2 && 
-                        u.Level <= currentUser.Level + 2)
+            .Where(u => u.IsSearchingForMatch &&
+                        u.Id != currentUser.Id)
             .OrderBy(u => Guid.NewGuid()) // Geçici rastgeleleştirme (gerçekte daha iyi bir mantık kurulabilir)
             .FirstOrDefaultAsync(cancellationToken);
 
